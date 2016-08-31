@@ -1,0 +1,1 @@
+main :: Int = (letfun x :: Int = 1 + x);

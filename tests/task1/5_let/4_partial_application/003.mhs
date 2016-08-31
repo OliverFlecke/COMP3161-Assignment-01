@@ -1,0 +1,10 @@
+main :: Int
+     =
+    let f :: (Int -> Int -> Int) =
+        letfun f :: (Int -> Int -> Int) x = 
+          letfun g :: (Int -> Int) y = x;
+    in 
+    let g :: (Int -> Int) = f 10;
+
+    in g 3;
+

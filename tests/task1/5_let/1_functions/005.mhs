@@ -1,0 +1,11 @@
+-- test environment
+
+main :: Int =
+    let f :: (Int -> Int  -> Int -> Int -> Int -> Int) =
+        (letfun f :: (Int -> Int -> Int -> Int -> Int -> Int) x =   -- 6
+           letfun f :: (Int -> Int -> Int -> Int  -> Int) x =       -- 5
+              letfun f :: (Int -> Int -> Int -> Int) x =            -- 4
+                 letfun f :: (Int -> Int -> Int) x =                -- 3
+                    letfun f :: (Int -> Int) x =                    -- 2
+                        (2*x)) ;
+    in f 0 0 0 0 7;

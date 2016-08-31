@@ -1,0 +1,13 @@
+
+main :: Int
+     =
+    let apply :: ((Int -> Int) -> Int -> Int) =
+        letfun apply :: ((Int -> Int) -> Int -> Int) f = 
+            letfun g :: (Int -> Int) x = f x;
+
+    in let plus :: (Int -> Int -> Int) =
+       letfun plus :: (Int -> Int -> Int) x = 
+         letfun g :: (Int -> Int) y = x + y;
+
+    in apply (plus 1) 2;
+

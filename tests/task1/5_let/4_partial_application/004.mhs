@@ -1,0 +1,24 @@
+--
+-- test closures
+--
+main :: Int
+     =
+    let not :: (Bool -> Bool) =
+        letfun not :: (Bool -> Bool) x = 
+            if x then False else True;
+
+    in let 
+        f :: (Bool -> Bool -> Bool -> Bool -> Int) =
+            letfun f :: (Bool -> Bool -> Bool -> Bool -> Int) x =
+                letfun g :: (Bool -> Bool -> Bool -> Int) y =
+                    letfun h :: (Bool -> Bool -> Int) z = 
+                        letfun i :: (Bool -> Int) _ =
+                                 if not z  -- and
+                            then if not y  -- and
+                            then if not x then 1
+                            else 0 
+                            else 0 
+                            else 0;
+            
+    in f False False False False;   -- should be 1
+
