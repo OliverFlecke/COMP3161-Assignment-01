@@ -1,4 +1,4 @@
-module MinHS.Evaluator where
+  module MinHS.Evaluator where
 import qualified MinHS.Env as E
 import MinHS.Syntax
 import MinHS.Pretty
@@ -26,4 +26,6 @@ evaluate bs = evalE E.empty (Let bs (Var "main"))
 
 
 evalE :: VEnv -> Exp -> Value
-evalE g e = error "Implement me!"
+
+
+evalE g e = error "Implement me!" -- For missing cases
