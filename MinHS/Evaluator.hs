@@ -30,5 +30,12 @@ evalE :: VEnv -> Exp -> Value
 evalE g (Num i) = I i
 evalE g (Con "True") = B True
 evalE g (Con "False") = B False
+-- List
+evalE g (Con "Nil") = Nil
+evalE g (App (App (Con "Cons") e1) e2) = 
+    case evalE g e1 of 
+      I i -> Cons i (evalE g e2)
+      _   -> error "Only list of integer is supported"
+
 
 evalE g e = error "Implement me!" -- For missing cases
