@@ -1,1 +1,5 @@
+# Folders to ignore
 dist/
+
+# Files to ignore
+run_tests.sh
