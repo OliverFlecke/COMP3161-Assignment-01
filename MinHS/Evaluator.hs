@@ -24,26 +24,28 @@ evaluate :: Program -> Value
 evaluate [Bind _ _ _ e] = evalE E.empty e
 evaluate bs = evalE E.empty (Let bs (Var "main"))
 
-
+-- Evaluator function
 evalE :: VEnv -> Exp -> Value
 -- Simple values
-evalE g (Num i) = I i
+evalE g (Num n) = I n
 evalE g (Con "True") = B True
 evalE g (Con "False") = B False
+
 -- List
 evalE g (Con "Nil") = Nil
 evalE g (App (App (Con "Cons") e1) e2) = 
   case evalE g e1 of 
     I i -> Cons i (evalE g e2)
     _   -> error "Only list of integer is supported"
-
 -- Head and tail operator for the list
 evalE g (App (Prim Head) e) = 
   case evalE g e of 
+    Nil       -> error "The list is empty. Head only works on non-empty lists"
     Cons i _  -> I i
     _         -> error "Head is only supported for lists" 
 evalE g (App (Prim Tail) e) = 
   case evalE g e of 
+    Nil         -> error "The list is empty. Tail only works on non-empty lists"
     Cons _ tail -> tail
     _           -> error "Tail is only supported for lists"
 -- Null operator to check is a list is empty
@@ -52,5 +54,30 @@ evalE g (App (Prim Null) e) =
     Nil -> B True
     _   -> B False
 
+
+
+-- Operators for integers
+evalE g (App (Prim Neg) e) = 
+  case evalE g e of 
+    I n -> I (-n)
+    _   -> error "Negation is only supported for integers"
+evalE g (App (App (Prim Add) e1) e2) = 
+  case (evalE g e1, evalE g e2) of 
+    (I x, I y)  -> I (x + y)
+    _           -> error "Addition is only supported for integers"  
+evalE g (App (App (Prim Sub) e1) e2) = 
+  case (evalE g e1, evalE g e2) of 
+    (I x, I y)  -> I (x - y) 
+    _           -> error "Subtration is only supported for integers"
+evalE g (App (App (Prim Quot) e1) e2) = 
+  case (evalE g e1, evalE g e2) of 
+    (_, I 0)    -> error "Division by zero not allowed!"
+    (I x, I y)  -> I (div x y)
+    _           -> error "Division is only supported for integers"
+evalE g (App (App (Prim Mul) e1) e2) = 
+  case (evalE g e1, evalE g e2) of 
+    (I x, I y)  -> I (x * y)
+    _           -> error "Multiplcation is only supported for integers"
+-- Operators for comparison
 
 evalE g e = error "Implement me!" -- For missing cases
