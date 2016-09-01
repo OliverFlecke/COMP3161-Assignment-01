@@ -33,9 +33,24 @@ evalE g (Con "False") = B False
 -- List
 evalE g (Con "Nil") = Nil
 evalE g (App (App (Con "Cons") e1) e2) = 
-    case evalE g e1 of 
-      I i -> Cons i (evalE g e2)
-      _   -> error "Only list of integer is supported"
+  case evalE g e1 of 
+    I i -> Cons i (evalE g e2)
+    _   -> error "Only list of integer is supported"
+
+-- Head and tail operator for the list
+evalE g (App (Prim Head) e) = 
+  case evalE g e of 
+    Cons i _  -> I i
+    _         -> error "Head is only supported for lists" 
+evalE g (App (Prim Tail) e) = 
+  case evalE g e of 
+    Cons _ tail -> tail
+    _           -> error "Tail is only supported for lists"
+-- Null operator to check is a list is empty
+evalE g (App (Prim Null) e) = 
+  case evalE g e of 
+    Nil -> B True
+    _   -> B False
 
 
 evalE g e = error "Implement me!" -- For missing cases
