@@ -2,4 +2,4 @@
 dist/
 
 # Files to ignore
-run_tests.sh
+*.sh
