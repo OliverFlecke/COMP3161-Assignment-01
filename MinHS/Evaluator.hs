@@ -11,7 +11,7 @@ data Value = I Integer
            | Nil
            | Cons Integer Value
            -- Others as needed
-           | F VEnv TyCon TyCon
+           | F [Char] Exp
            deriving (Show)
 
 instance PP.Pretty Value where
@@ -129,14 +129,17 @@ evalE g (Let [Bind s _ [] e1] e2) =
    in evalE g' e2
 
 -- Let function
---evalE g (Letfun (Bind f (Arrow t1 t2) [v] e)) =
---  let g' = E.add g (f, (F g t1 t2))
---  in evalE g' e
+evalE g (Letfun (Bind f (Arrow t1 t2) [v] e)) =
+  let g' = E.add g (f, (F v e))
+  in F v e
 
 -- Apply
---evalE g (App (Var s) e) =
---  case (E.lookup g s) of 
---    Just (Arrow (TypeCon Int) (TypeCon Int)) ->
+evalE g (App (Var s) e) =
+  case (E.lookup g s) of 
+    Just (F x e') -> 
+      let g' = E.add E.empty (x, evalE g e)
+      in evalE g' e' 
+    Nothing -> error ("Function " ++ s ++ " not in scope")
 
 -- For missing cases
-evalE g e = error "Implement me!" 
+evalE g e = error ("Implement me!")
