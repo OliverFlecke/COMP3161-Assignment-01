@@ -11,7 +11,7 @@ data Value = I Integer
            | Nil
            | Cons Integer Value
            -- Others as needed
-           | F [Char] Exp
+           | F VEnv [Char] Exp
            deriving (Show)
 
 instance PP.Pretty Value where
@@ -130,23 +130,23 @@ evalE g (Let [Bind s _ [] e1] e2) =
 
 -- Let function
 evalE g (Letfun (Bind f (Arrow t1 t2) [v] e)) =
-  let g' = E.add g (f, (F v e))
-  in F v e
+  let g' = E.add g (f, (F g v e))
+  in F g v e
 
 -- Apply
 evalE g (App (Var s) e) =
   case (E.lookup g s) of 
-    Just (F var funExpr) -> evaluateFunction g (F var funExpr) e
+    Just (F fEnv var funExpr) -> evaluateFunction g (F fEnv var funExpr) e
     Nothing -> error ("Function " ++ s ++ " not in scope")
 evalE g (App fun e) = 
   case evalE g fun of 
-    F var funExpr -> evaluateFunction g (F var funExpr) e
+    F fEnv var funExpr -> evaluateFunction g (F fEnv var funExpr) e
 
 
 -- For missing cases
 evalE g e = error ("Implement me!")
 
 evaluateFunction :: VEnv -> Value -> Exp -> Value
-evaluateFunction g (F var funExpr) e =
-  let g' = E.add E.empty (var, evalE g e)
+evaluateFunction g (F fEnv var funExpr) e =
+  let g' = E.add fEnv (var, evalE g e)
   in evalE g' funExpr
