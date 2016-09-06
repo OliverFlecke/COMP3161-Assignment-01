@@ -136,10 +136,16 @@ evalE g (Letfun (Bind f (Arrow t1 t2) [v] e)) =
 -- Apply
 evalE g (App (Var s) e) =
   case (E.lookup g s) of 
-    Just (F x e') -> 
+    Just (F x funExpr) -> 
       let g' = E.add E.empty (x, evalE g e)
-      in evalE g' e' 
+      in evalE g' funExpr 
     Nothing -> error ("Function " ++ s ++ " not in scope")
+evalE g (App fun e) = 
+  case evalE g fun of 
+    F var funExpr ->
+      let g' = E.add E.empty (var, evalE g e)
+      in evalE g' funExpr
+
 
 -- For missing cases
 evalE g e = error ("Implement me!")
