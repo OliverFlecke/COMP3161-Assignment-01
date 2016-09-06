@@ -129,9 +129,9 @@ evalE g (Let [Bind s _ [] e1] e2) =
    in evalE g' e2
 
 -- Let function
-evalE g (Letfun (Bind f (Arrow t1 t2) [v] e)) =
-  let g' = E.add g (f, (F g t1 t2))
-  in evalE g' e
+--evalE g (Letfun (Bind f (Arrow t1 t2) [v] e)) =
+--  let g' = E.add g (f, (F g t1 t2))
+--  in evalE g' e
 
 -- Apply
 --evalE g (App (Var s) e) =
