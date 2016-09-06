@@ -11,6 +11,7 @@ data Value = I Integer
            | Nil
            | Cons Integer Value
            -- Others as needed
+           | F VEnv TyCon TyCon
            deriving (Show)
 
 instance PP.Pretty Value where
@@ -23,6 +24,9 @@ instance PP.Pretty Value where
 evaluate :: Program -> Value
 evaluate [Bind _ _ _ e] = evalE E.empty e
 evaluate bs = evalE E.empty (Let bs (Var "main"))
+
+
+
 
 -- Evaluator function
 evalE :: VEnv -> Exp -> Value
@@ -46,8 +50,8 @@ evalE g (If b e1 e2) =
     _       -> error "The expression could not be evaluated to a boolean"
 
 
--- Apply
---evalE g (App e1 e2) 
+
+
 
 -- List
 evalE g (Con "Nil") = Nil
@@ -117,14 +121,22 @@ evalE g (App (App (Prim Ne) e1) e2) =
   case (evalE g (App (App (Prim Eq) e1) e2)) of
     B b -> B (not b)
 
+
+
 -- Let expression - Variables 
 evalE g (Let [Bind s _ [] e1] e2) = 
   let g' = E.add g (s, (evalE g e1))
    in evalE g' e2
 
+-- Let function
+evalE g (Letfun (Bind f (Arrow t1 t2) [v] e)) =
+  let g' = E.add g (f, (F g t1 t2))
+  in evalE g' e
 
-
-
+-- Apply
+--evalE g (App (Var s) e) =
+--  case (E.lookup g s) of 
+--    Just (Arrow (TypeCon Int) (TypeCon Int)) ->
 
 -- For missing cases
 evalE g e = error "Implement me!" 
