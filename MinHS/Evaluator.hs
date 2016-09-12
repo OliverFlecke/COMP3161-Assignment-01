@@ -38,9 +38,9 @@ evalE g (Con "False") = B False
 -- Variable
 evalE g (Var s) = 
   case E.lookup g s of 
-    Just e  -> e
-    --Nothing -> PP.pretty (NoSuchVariable s)
-    Nothing -> error $ "Variable " ++ s ++ " is not in scope"
+    Just (F funEnv _ [] funExpr)  -> evalE funEnv funExpr
+    Just e                        -> e
+    Nothing                       -> error $ "Variable " ++ s ++ " is not in scope"
 
 -- If then else expressions
 evalE g (If b e1 e2) = 
@@ -154,18 +154,26 @@ evalE g (App (Var s) e) =
     Nothing -> error ("Function " ++ s ++ " not in scope")
 evalE g (App fun e) = 
   case evalE g fun of 
-    F fEnv name var funExpr -> evaluateFunction g (F fEnv name var funExpr) e
+    F fEnv name vars funExpr -> 
+      --let g' = E.add g (name, F fEnv name vars funExpr)
+      --in 
+      evaluateFunction g (F fEnv name vars funExpr) e
 
 
 -- For missing cases
 evalE g e = error ("Implement me!")
 
 evaluateFunction :: VEnv -> Value -> Exp -> Value
-evaluateFunction g (F fEnv name vars funExpr) e =
-  if vars == [] 
-    then 
-      evalE g funExpr
-    else 
-      let fEnv' = E.add fEnv (name, F fEnv name vars funExpr)
-      in let funEnv'' = E.add fEnv' (head vars, evalE g e)
-         in evalE funEnv'' funExpr
+evaluateFunction g (F funEnv name vars funExpr) e =
+  let funEnv' = E.add funEnv (name, F funEnv name vars funExpr)
+  in 
+    if vars == []
+      then evalE funEnv' funExpr 
+      else
+        let funEnv'' = E.add funEnv' (head vars, evalE g e)
+        in
+          if tail vars == []
+            then 
+              evalE funEnv'' funExpr
+            else 
+              (F funEnv'' name (tail vars) funExpr)
