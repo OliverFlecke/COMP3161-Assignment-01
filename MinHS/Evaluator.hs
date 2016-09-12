@@ -109,8 +109,14 @@ evalE g (App (App (Prim Le) e1) e2) =
   case (evalE g e1, evalE g e2) of 
     (I x, I y)  -> B (x <= y)
     _           -> error "Comparison is only supported for integers"
-evalE g (App (App (Prim Gt) e1) e2) = evalE g (App (App (Prim Le) e2) e1)
-evalE g (App (App (Prim Lt) e1) e2) = evalE g (App (App (Prim Ge) e2) e1)
+evalE g (App (App (Prim Gt) e1) e2) = 
+  case (evalE g e1, evalE g e2) of 
+    (I x, I y)  -> B (x > y) 
+    _           -> error "Comparison is only supported for integers"    
+evalE g (App (App (Prim Lt) e1) e2) =
+  case (evalE g e1, evalE g e2) of 
+    (I x, I y)  -> B (x < y) 
+    _           -> error "Comparison is only supported for integers"
 
 -- Equality and inequality
 evalE g (App (App (Prim Eq) e1) e2) = 
