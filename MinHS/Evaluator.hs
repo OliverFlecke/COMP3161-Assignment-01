@@ -11,7 +11,7 @@ data Value = I Integer
            | Nil
            | Cons Integer Value
            -- Others as needed
-           | F VEnv [Char] [Char] Exp
+           | F VEnv [Char] [[Char]] Exp
            deriving (Show)
 
 instance PP.Pretty Value where
@@ -62,14 +62,22 @@ evalE g (App (App (Con "Cons") e1) e2) =
 -- Head and tail operator for the list
 evalE g (App (Prim Head) e) = 
   case evalE g e of 
-    Nil       -> error "The list is empty. Head only works on non-empty lists"
-    Cons i _  -> I i
-    _         -> error "Head is only supported for lists" 
+    Nil             -> error "The list is empty. Head only works on non-empty lists"
+    Cons i _        -> I i
+    F funEnv f [] e -> 
+      case evalE funEnv e of 
+        Cons i _  -> I i
+        _         -> error "Function did not return a list"
+    _               -> error "Head is only supported for lists" 
 evalE g (App (Prim Tail) e) = 
   case evalE g e of 
-    Nil         -> error "The list is empty. Tail only works on non-empty lists"
-    Cons _ tail -> tail
-    _           -> error "Tail is only supported for lists"
+    Nil             -> error "The list is empty. Tail only works on non-empty lists"
+    Cons _ tail     -> tail
+    F funEnv f [] e ->
+      case evalE funEnv e of 
+        Cons _ tail -> tail
+        _           -> error "Function did not return a list"
+    _               -> error "Tail is only supported for lists"
 -- Null operator to check is a list is empty
 evalE g (App (Prim Null) e) = 
   case evalE g e of 
@@ -135,7 +143,7 @@ evalE g (Let [Bind s _ [] e1] e2) =
    in evalE g' e2
 
 -- Let function
-evalE g (Letfun (Bind f (Arrow t1 t2) [v] e)) =
+evalE g (Letfun (Bind f _ v e)) =
   let g' = E.add g (f, (F g f v e))
   in F g' f v e
 
@@ -153,7 +161,11 @@ evalE g (App fun e) =
 evalE g e = error ("Implement me!")
 
 evaluateFunction :: VEnv -> Value -> Exp -> Value
-evaluateFunction g (F fEnv name var funExpr) e =
-  let fEnv' = E.add fEnv (name, F fEnv name var funExpr)
-  in let g' = E.add fEnv' (var, evalE g e)
-     in evalE g' funExpr
+evaluateFunction g (F fEnv name vars funExpr) e =
+  if vars == [] 
+    then 
+      evalE g funExpr
+    else 
+      let fEnv' = E.add fEnv (name, F fEnv name vars funExpr)
+      in let funEnv'' = E.add fEnv' (head vars, evalE g e)
+         in evalE funEnv'' funExpr
