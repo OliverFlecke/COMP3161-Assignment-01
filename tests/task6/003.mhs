@@ -1,0 +1,5 @@
+main :: Int = 
+    letrec a :: (Int -> Int) = b; 
+           b :: (Int -> Int) = c; 
+           c :: (Int -> Int) = letfun f :: (Int -> Int) x = x + x; 
+    in a 1;

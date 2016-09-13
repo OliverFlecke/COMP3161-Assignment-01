@@ -101,6 +101,10 @@ evalE g (App (Prim op) e) =
         _   -> error "Operator is not yet supported"
     _   -> error "Operators is only supported for integers"
 
+--evalE g (App (Prim Neg) e) = 
+--  case evalE g e of 
+--    I n -> I (-n)
+--    _   -> error "Negation is only supported for integers"
 evalE g (App (App (Prim op) e1) e2) =
   case (evalE g e1, evalE g e2) of 
     (Nil, _)  -> Nil

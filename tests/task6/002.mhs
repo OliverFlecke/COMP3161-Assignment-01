@@ -1,0 +1,5 @@
+main :: Bool = 
+    letrec a :: Bool = b; 
+           b :: Bool = c; 
+           c :: Bool = True; 
+    in a;
