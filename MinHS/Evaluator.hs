@@ -10,7 +10,6 @@ data Value = I Integer
            | B Bool
            | Nil
            | Cons Integer Value
-           -- Others as needed
            | F VEnv [Char] [[Char]] Exp
            deriving (Show)
 

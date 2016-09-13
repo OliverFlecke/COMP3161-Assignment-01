@@ -1,1 +1,0 @@
-main :: Int = let inc :: (Int -> Int) = letfun inc :: (Int -> Int) = (+) 1; in 2; 
