@@ -48,10 +48,6 @@ evalE g (If b e1 e2) =
     B False -> evalE g e2
     _       -> error "The expression could not be evaluated to a boolean"
 
-
-
-
-
 -- List
 evalE g (Con "Nil") = Nil
 evalE g (App (App (Con "Cons") e1) e2) = 
@@ -125,66 +121,6 @@ evalE g (App (App (Prim op) e1) e2) =
         Eq  -> B (x == y)
         Ne  -> B (not (x == y))
     _           -> error "Operators is only supported for integers"
-
---evalE g (App (App (Prim Add) e1) e2) = 
---  case (evalE g e1, evalE g e2) of 
---    (I x, I y)  -> I (x + y)
---    _           -> error "Addition is only supported for integers"  
---evalE g (App (App (Prim Sub) e1) e2) = 
---  case (evalE g e1, evalE g e2) of 
---    (I x, I y)  -> I (x - y) 
---    _           -> error "Subtration is only supported for integers"
---evalE g (App (App (Prim Quot) e1) e2) = 
---  case (evalE g e1, evalE g e2) of 
---    (_, I 0)    -> error "Division by zero not allowed!"
---    (I x, I y)  -> I (quot x y)
---    _           -> error "Division is only supported for integers"
---evalE g (App (App (Prim Mul) e1) e2) = 
---  case (evalE g e1, evalE g e2) of 
---    (I x, I y)  -> I (x * y)
---    _           -> error "Multiplcation is only supported for integers"
-
--- Operators for comparison
---evalE g (App (App (Prim op) e1) e2) =
---  case (evalE g e1, evalE g e2) of 
---    (I x, I y)  ->
---        case op of 
---          Ge  -> B (x >= y)
---          Le  -> B (x <= y)
---          Gt  -> B (x > y)
---          Lt  -> B (x < y)
---          Eq  -> B (x == y)
---          Ne  -> B (not (x == y))
---          _   -> error "Comparison operator not yet implemented"
---    _           -> error "Operators are not supported for integers"
-
---evalE g (App (App (Prim Ge) e1) e2) =
---  case (evalE g e1, evalE g e2) of 
---    (I x, I y)  -> B (x >= y)
---    _           -> error "Comparison is only supported for integers"
---evalE g (App (App (Prim Le) e1) e2) = 
---  case (evalE g e1, evalE g e2) of 
---    (I x, I y)  -> B (x <= y)
---    _           -> error "Comparison is only supported for integers"
---evalE g (App (App (Prim Gt) e1) e2) = 
---  case (evalE g e1, evalE g e2) of 
---    (I x, I y)  -> B (x > y) 
---    _           -> error "Comparison is only supported for integers"    
---evalE g (App (App (Prim Lt) e1) e2) =
---  case (evalE g e1, evalE g e2) of 
---    (I x, I y)  -> B (x < y) 
---    _           -> error "Comparison is only supported for integers"
-
--- Equality and inequality
---evalE g (App (App (Prim Eq) e1) e2) = 
---  case (evalE g e1, evalE g e2) of 
---    (I x, I y)  -> B (x == y) 
---    _           -> error "Equality is only supported for integers"
---evalE g (App (App (Prim Ne) e1) e2) =
---  case (evalE g (App (App (Prim Eq) e1) e2)) of
---    B b -> B (not b)
-
-
 
 -- Let expression - Variables 
 evalE g (Let [] e) = evalE g e
