@@ -38,7 +38,7 @@ evalE g (Con "False") = B False
 -- Variable
 evalE g (Var s) = 
   case E.lookup g s of 
-    Just (F funEnv _ [] funExpr)  -> evalE funEnv funExpr
+    Just (F fg _ [] e)  -> evalE fg e
     Just e                        -> e
     Nothing                       -> error $ "Variable " ++ s ++ " is not in scope"
 
@@ -59,6 +59,7 @@ evalE g (App (App (Con "Cons") e1) e2) =
   case evalE g e1 of 
     I i -> Cons i (evalE g e2)
     _   -> error "Only list of integer is supported"
+
 -- Head and tail operator for the list
 evalE g (App (Prim Head) e) = 
   case evalE g e of 
@@ -107,37 +108,56 @@ evalE g (App (Prim op) e) =
 --  case evalE g e of 
 --    I n -> I (-n)
 --    _   -> error "Negation is only supported for integers"
-evalE g (App (App (Prim Add) e1) e2) = 
-  case (evalE g e1, evalE g e2) of 
-    (I x, I y)  -> I (x + y)
-    _           -> error "Addition is only supported for integers"  
-evalE g (App (App (Prim Sub) e1) e2) = 
-  case (evalE g e1, evalE g e2) of 
-    (I x, I y)  -> I (x - y) 
-    _           -> error "Subtration is only supported for integers"
-evalE g (App (App (Prim Quot) e1) e2) = 
-  case (evalE g e1, evalE g e2) of 
-    (_, I 0)    -> error "Division by zero not allowed!"
-    (I x, I y)  -> I (quot x y)
-    _           -> error "Division is only supported for integers"
-evalE g (App (App (Prim Mul) e1) e2) = 
-  case (evalE g e1, evalE g e2) of 
-    (I x, I y)  -> I (x * y)
-    _           -> error "Multiplcation is only supported for integers"
-
--- Operators for comparison
 evalE g (App (App (Prim op) e1) e2) =
   case (evalE g e1, evalE g e2) of 
-    (I x, I y)  ->
-        case op of 
-          Ge  -> B (x >= y)
-          Le  -> B (x <= y)
-          Gt  -> B (x > y)
-          Lt  -> B (x < y)
-          Eq  -> B (x == y)
-          Ne  -> B (not (x == y))
-          _   -> error "Comparison operator not yet implemented"
-    _           -> error "Operators are not supported for integers"
+    (I x, I y)  -> 
+      case op of 
+        Add   -> I (x + y)
+        Sub   -> I (x - y)
+        Mul   -> I (x * y)
+        Quot  -> if y == 0 
+                  then error "Division by zero is not allowed"
+                  else I (quot x y)
+        -- Operators for comparison
+        Ge  -> B (x >= y)
+        Le  -> B (x <= y)
+        Gt  -> B (x > y)
+        Lt  -> B (x < y)
+        Eq  -> B (x == y)
+        Ne  -> B (not (x == y))
+    _           -> error "Operators is only supported for integers"
+
+--evalE g (App (App (Prim Add) e1) e2) = 
+--  case (evalE g e1, evalE g e2) of 
+--    (I x, I y)  -> I (x + y)
+--    _           -> error "Addition is only supported for integers"  
+--evalE g (App (App (Prim Sub) e1) e2) = 
+--  case (evalE g e1, evalE g e2) of 
+--    (I x, I y)  -> I (x - y) 
+--    _           -> error "Subtration is only supported for integers"
+--evalE g (App (App (Prim Quot) e1) e2) = 
+--  case (evalE g e1, evalE g e2) of 
+--    (_, I 0)    -> error "Division by zero not allowed!"
+--    (I x, I y)  -> I (quot x y)
+--    _           -> error "Division is only supported for integers"
+--evalE g (App (App (Prim Mul) e1) e2) = 
+--  case (evalE g e1, evalE g e2) of 
+--    (I x, I y)  -> I (x * y)
+--    _           -> error "Multiplcation is only supported for integers"
+
+-- Operators for comparison
+--evalE g (App (App (Prim op) e1) e2) =
+--  case (evalE g e1, evalE g e2) of 
+--    (I x, I y)  ->
+--        case op of 
+--          Ge  -> B (x >= y)
+--          Le  -> B (x <= y)
+--          Gt  -> B (x > y)
+--          Lt  -> B (x < y)
+--          Eq  -> B (x == y)
+--          Ne  -> B (not (x == y))
+--          _   -> error "Comparison operator not yet implemented"
+--    _           -> error "Operators are not supported for integers"
 
 --evalE g (App (App (Prim Ge) e1) e2) =
 --  case (evalE g e1, evalE g e2) of 
