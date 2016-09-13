@@ -192,6 +192,9 @@ evalE g (Let [] e) = evalE g e
 evalE g (Let ((Bind s _ [] e1):xs) e2) = 
   let g' = E.add g (s, (evalE g e1))
    in evalE g' (Let xs e2)
+evalE g (Let ((Bind f _ v e1):xs) e2) = 
+  let g' = E.add g (f, (F g f v e1))
+   in evalE g' (Let xs e2)
 
 -- Let function
 evalE g (Letfun (Bind f _ v e)) =

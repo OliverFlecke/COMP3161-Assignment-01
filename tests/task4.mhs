@@ -1,0 +1,6 @@
+main :: Int 
+    = let 
+        a :: Int = 3; 
+        b :: Int = 2; 
+        c :: Int = 5;
+    in a + b * c;

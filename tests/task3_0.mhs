@@ -1,0 +1,5 @@
+main :: Int 
+    = let f :: (Int -> Int -> Int -> Int) = 
+        letfun f :: (Int -> Int -> Int -> Int) x y z = 
+            x + y * z; 
+    in f 1 2 5;
