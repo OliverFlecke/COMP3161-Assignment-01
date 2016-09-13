@@ -19,7 +19,7 @@ instance PP.Pretty Value where
   pretty (B b) = datacon $ show b
   pretty (Nil) = datacon "Nil"
   pretty (Cons x v) = PP.parens (datacon "Cons" PP.<+> numeric x PP.<+> PP.pretty v)
-  --pretty _ = undefined -- should not ever be used
+  pretty _ = undefined -- should not ever be used
 
 evaluate :: Program -> Value
 evaluate [Bind _ _ _ e] = evalE E.empty e
@@ -86,11 +86,27 @@ evalE g (App (Prim Null) e) =
 
 
 
--- Operators for integers
-evalE g (App (Prim Neg) e) = 
+-- Parital functions
+evalE g (App (Prim Add) e) = 
   case evalE g e of 
-    I n -> I (-n)
-    _   -> error "Negation is only supported for integers"
+    I n -> F g "" ["x"] (App (App (Prim Add) (Num n)) (Var "x"))
+    _   -> error "Addition is only supported for integers"
+
+
+
+-- Operators for integers
+evalE g (App (Prim op) e) = 
+  case evalE g e of 
+    I n -> 
+      case op of 
+        Neg -> I (-n)
+        _   -> error "Operator is not yet supported"
+    _   -> error "Operators is only supported for integers"
+
+--evalE g (App (Prim Neg) e) = 
+--  case evalE g e of 
+--    I n -> I (-n)
+--    _   -> error "Negation is only supported for integers"
 evalE g (App (App (Prim Add) e1) e2) = 
   case (evalE g e1, evalE g e2) of 
     (I x, I y)  -> I (x + y)
@@ -108,32 +124,46 @@ evalE g (App (App (Prim Mul) e1) e2) =
   case (evalE g e1, evalE g e2) of 
     (I x, I y)  -> I (x * y)
     _           -> error "Multiplcation is only supported for integers"
+
 -- Operators for comparison
-evalE g (App (App (Prim Ge) e1) e2) =
+evalE g (App (App (Prim op) e1) e2) =
   case (evalE g e1, evalE g e2) of 
-    (I x, I y)  -> B (x >= y)
-    _           -> error "Comparison is only supported for integers"
-evalE g (App (App (Prim Le) e1) e2) = 
-  case (evalE g e1, evalE g e2) of 
-    (I x, I y)  -> B (x <= y)
-    _           -> error "Comparison is only supported for integers"
-evalE g (App (App (Prim Gt) e1) e2) = 
-  case (evalE g e1, evalE g e2) of 
-    (I x, I y)  -> B (x > y) 
-    _           -> error "Comparison is only supported for integers"    
-evalE g (App (App (Prim Lt) e1) e2) =
-  case (evalE g e1, evalE g e2) of 
-    (I x, I y)  -> B (x < y) 
-    _           -> error "Comparison is only supported for integers"
+    (I x, I y)  ->
+        case op of 
+          Ge  -> B (x >= y)
+          Le  -> B (x <= y)
+          Gt  -> B (x > y)
+          Lt  -> B (x < y)
+          Eq  -> B (x == y)
+          Ne  -> B (not (x == y))
+          _   -> error "Comparison operator not yet implemented"
+    _           -> error "Operators are not supported for integers"
+
+--evalE g (App (App (Prim Ge) e1) e2) =
+--  case (evalE g e1, evalE g e2) of 
+--    (I x, I y)  -> B (x >= y)
+--    _           -> error "Comparison is only supported for integers"
+--evalE g (App (App (Prim Le) e1) e2) = 
+--  case (evalE g e1, evalE g e2) of 
+--    (I x, I y)  -> B (x <= y)
+--    _           -> error "Comparison is only supported for integers"
+--evalE g (App (App (Prim Gt) e1) e2) = 
+--  case (evalE g e1, evalE g e2) of 
+--    (I x, I y)  -> B (x > y) 
+--    _           -> error "Comparison is only supported for integers"    
+--evalE g (App (App (Prim Lt) e1) e2) =
+--  case (evalE g e1, evalE g e2) of 
+--    (I x, I y)  -> B (x < y) 
+--    _           -> error "Comparison is only supported for integers"
 
 -- Equality and inequality
-evalE g (App (App (Prim Eq) e1) e2) = 
-  case (evalE g e1, evalE g e2) of 
-    (I x, I y)  -> B (x == y) 
-    _           -> error "Equality is only supported for integers"
-evalE g (App (App (Prim Ne) e1) e2) =
-  case (evalE g (App (App (Prim Eq) e1) e2)) of
-    B b -> B (not b)
+--evalE g (App (App (Prim Eq) e1) e2) = 
+--  case (evalE g e1, evalE g e2) of 
+--    (I x, I y)  -> B (x == y) 
+--    _           -> error "Equality is only supported for integers"
+--evalE g (App (App (Prim Ne) e1) e2) =
+--  case (evalE g (App (App (Prim Eq) e1) e2)) of
+--    B b -> B (not b)
 
 
 
@@ -150,30 +180,25 @@ evalE g (Letfun (Bind f _ v e)) =
 -- Apply
 evalE g (App (Var s) e) =
   case (E.lookup g s) of 
-    Just (F fEnv name var funExpr) -> evaluateFunction g (F fEnv name var funExpr) e
+    Just (F fg n v fe) -> 
+      evaluateFunction g (F fg n v fe) e
     Nothing -> error ("Function " ++ s ++ " not in scope")
 evalE g (App fun e) = 
   case evalE g fun of 
-    F fEnv name vars funExpr -> 
-      --let g' = E.add g (name, F fEnv name vars funExpr)
-      --in 
-      evaluateFunction g (F fEnv name vars funExpr) e
-
+    F fg n v fe -> 
+      evaluateFunction g (F fg n v fe) e
 
 -- For missing cases
 evalE g e = error ("Implement me!")
 
+-- Evaluate functions
 evaluateFunction :: VEnv -> Value -> Exp -> Value
-evaluateFunction g (F funEnv name vars funExpr) e =
-  let funEnv' = E.add funEnv (name, F funEnv name vars funExpr)
-  in 
-    if vars == []
-      then evalE funEnv' funExpr 
-      else
-        let funEnv'' = E.add funEnv' (head vars, evalE g e)
-        in
-          if tail vars == []
-            then 
-              evalE funEnv'' funExpr
-            else 
-              (F funEnv'' name (tail vars) funExpr)
+evaluateFunction g (F fg n v fe) e =
+  let fg' = E.add fg (n, F fg n v fe)
+  in if v == []
+      then evalE fg' fe 
+      else 
+        let fg'' = E.add fg' (head v, evalE g e)
+        in if tail v == []
+          then evalE fg'' fe
+          else (F fg'' n (tail v) fe)
