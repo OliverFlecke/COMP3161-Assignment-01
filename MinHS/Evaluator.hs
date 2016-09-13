@@ -3,6 +3,7 @@ import qualified MinHS.Env as E
 import MinHS.Syntax
 import MinHS.Pretty
 import qualified Text.PrettyPrint.ANSI.Leijen as PP
+import Control.Exception
 
 type VEnv = E.Env Value
 
@@ -39,7 +40,8 @@ evalE g (Var s) =
   case E.lookup g s of 
     Just (F fg _ [] e)  -> evalE fg e
     Just e                        -> e
-    Nothing                       -> error $ "Variable " ++ s ++ " is not in scope"
+    --Nothing                       -> error $ "Variable " ++ s ++ " is not in scope"
+    Nothing -> Nil
 
 -- If then else expressions
 evalE g (If b e1 e2) = 
@@ -99,12 +101,10 @@ evalE g (App (Prim op) e) =
         _   -> error "Operator is not yet supported"
     _   -> error "Operators is only supported for integers"
 
---evalE g (App (Prim Neg) e) = 
---  case evalE g e of 
---    I n -> I (-n)
---    _   -> error "Negation is only supported for integers"
 evalE g (App (App (Prim op) e1) e2) =
   case (evalE g e1, evalE g e2) of 
+    (Nil, _)  -> Nil
+    (_, Nil)  -> Nil
     (I x, I y)  -> 
       case op of 
         Add   -> I (x + y)
@@ -146,6 +146,14 @@ evalE g (App fun e) =
   case evalE g fun of 
     F fg n v fe -> 
       evaluateFunction g (F fg n v fe) e
+
+-- Letrec
+evalE g (Letrec [] e) = evalE g e
+evalE g (Letrec ((Bind s t [] e1):xs) e2) = 
+  case evalE g e1 of 
+    Nil -> evalE g (Letrec (xs ++ [Bind s t [] e1]) e2)
+    x   -> let g' = E.add g (s, x)
+            in evalE g' (Letrec xs e2)
 
 -- For missing cases
 evalE g e = error ("Implement me!")
