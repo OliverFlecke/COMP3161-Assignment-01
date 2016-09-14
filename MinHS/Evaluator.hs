@@ -26,8 +26,6 @@ evaluate [Bind _ _ _ e] = evalE E.empty e
 evaluate bs = evalE E.empty (Let bs (Var "main"))
 
 
-
-
 -- Evaluator function
 evalE :: VEnv -> Exp -> Value
 -- Simple values
@@ -39,16 +37,14 @@ evalE g (Con "False") = B False
 evalE g (Var s) = 
   case E.lookup g s of 
     Just (F fg _ [] e)  -> evalE fg e
-    Just e                        -> e
-    --Nothing                       -> error $ "Variable " ++ s ++ " is not in scope"
-    Nothing -> Nil
+    Just e              -> e
+    Nothing             -> Nil
 
 -- If then else expressions
 evalE g (If b e1 e2) = 
   case evalE g b of 
     B True  -> evalE g e1
     B False -> evalE g e2
-    _       -> error "The expression could not be evaluated to a boolean"
 
 -- List
 evalE g (Con "Nil") = Nil
@@ -71,8 +67,8 @@ evalE g (App (Prim Tail) e) =
   case evalE g e of 
     Nil             -> error "The list is empty. Tail only works on non-empty lists"
     Cons _ tail     -> tail
-    F funEnv f [] e ->
-      case evalE funEnv e of 
+    F funEnv f [] fe ->
+      case evalE funEnv fe of 
         Cons _ tail -> tail
         _           -> error "Function did not return a list"
     _               -> error "Tail is only supported for lists"
@@ -82,33 +78,20 @@ evalE g (App (Prim Null) e) =
     Nil -> B True
     _   -> B False
 
-
-
--- Parital functions
-evalE g (App (Prim Add) e) = 
-  case evalE g e of 
-    I n -> F g "" ["x"] (App (App (Prim Add) (Num n)) (Var "x"))
-    _   -> error "Addition is only supported for integers"
-
-
-
--- Operators for integers
+-- Parital functions 
 evalE g (App (Prim op) e) = 
   case evalE g e of 
-    I n -> 
-      case op of 
-        Neg -> I (-n)
-        _   -> error "Operator is not yet supported"
+    Nil -> Nil
+    I n -> case op of 
+      Neg   -> I (-n)
+      x     -> F g "" ["$"] (App (App (Prim x) (Var "$")) (Num n))
     _   -> error "Operators is only supported for integers"
 
---evalE g (App (Prim Neg) e) = 
---  case evalE g e of 
---    I n -> I (-n)
---    _   -> error "Negation is only supported for integers"
+-- Operators for integers
 evalE g (App (App (Prim op) e1) e2) =
   case (evalE g e1, evalE g e2) of 
-    (Nil, _)  -> Nil
-    (_, Nil)  -> Nil
+    (Nil, _)    -> Nil
+    (_, Nil)    -> Nil
     (I x, I y)  -> 
       case op of 
         Add   -> I (x + y)
@@ -140,17 +123,6 @@ evalE g (Letfun (Bind f _ v e)) =
   let g' = E.add g (f, (F g f v e))
   in F g' f v e
 
--- Apply
-evalE g (App (Var s) e) =
-  case (E.lookup g s) of 
-    Just (F fg n v fe) -> 
-      evaluateFunction g (F fg n v fe) e
-    Nothing -> error ("Function " ++ s ++ " not in scope")
-evalE g (App fun e) = 
-  case evalE g fun of 
-    F fg n v fe -> 
-      evaluateFunction g (F fg n v fe) e
-
 -- Letrec
 evalE g (Letrec [] e) = evalE g e
 evalE g (Letrec ((Bind s t [] e1):xs) e2) = 
@@ -159,17 +131,28 @@ evalE g (Letrec ((Bind s t [] e1):xs) e2) =
     x   -> let g' = E.add g (s, x)
             in evalE g' (Letrec xs e2)
 
--- For missing cases
+-- Apply
+evalE g (App (Var s) e) =
+  case (E.lookup g s) of 
+    Just (F fg n v fe)  -> evaluateFunction g (F fg n v fe) e
+    Nothing             -> error ("Function " ++ s ++ " not in scope")
+evalE g (App fun e) = 
+  case evalE g fun of 
+    F fg n v fe   -> evaluateFunction g (F fg n v fe) e
+
+-- For missing cases - Shouldn't be any
 evalE g e = error ("Implement me!")
 
 -- Evaluate functions
 evaluateFunction :: VEnv -> Value -> Exp -> Value
+evaluateFunction g (F fg n [] fe) e = 
+  let fg' = E.add fg (n, F fg n [] fe) 
+  in case evalE fg' fe of 
+    F fg'' n' v' fe' -> evaluateFunction g (F fg'' n' v' fe') e
+    x                -> x  
 evaluateFunction g (F fg n v fe) e =
   let fg' = E.add fg (n, F fg n v fe)
-  in if v == []
-      then evalE fg' fe 
-      else 
-        let fg'' = E.add fg' (head v, evalE g e)
-        in if tail v == []
-          then evalE fg'' fe
-          else (F fg'' n (tail v) fe)
+      fg'' = E.add fg' (head v, evalE g e)
+  in if tail v == []
+      then evalE fg'' fe
+      else (F fg'' n (tail v) fe)
