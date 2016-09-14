@@ -1,0 +1,1 @@
+main :: Bool = let gt :: (Int -> Bool) = letfun gt :: (Int -> Bool) = (>) 5; in gt 10; 

@@ -1,0 +1,1 @@
+main :: Int = let times10 :: (Int -> Int) = letfun times10 :: (Int -> Int) = (*) 10; in times10 10; 

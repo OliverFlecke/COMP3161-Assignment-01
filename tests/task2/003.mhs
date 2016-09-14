@@ -1,0 +1,1 @@
+main :: Int = let div2 :: (Int -> Int) = letfun div2 :: (Int -> Int) = (/) 2; in div2 10; 

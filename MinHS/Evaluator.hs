@@ -54,38 +54,55 @@ evalE g (App (App (Con "Cons") e1) e2) =
     _   -> error "Only list of integer is supported"
 
 -- Head and tail operator for the list
-evalE g (App (Prim Head) e) = 
-  case evalE g e of 
-    Nil             -> error "The list is empty. Head only works on non-empty lists"
-    Cons i _        -> I i
-    F funEnv f [] e -> 
-      case evalE funEnv e of 
-        Cons i _  -> I i
-        _         -> error "Function did not return a list"
-    _               -> error "Head is only supported for lists" 
-evalE g (App (Prim Tail) e) = 
-  case evalE g e of 
-    Nil             -> error "The list is empty. Tail only works on non-empty lists"
-    Cons _ tail     -> tail
-    F funEnv f [] fe ->
-      case evalE funEnv fe of 
-        Cons _ tail -> tail
-        _           -> error "Function did not return a list"
-    _               -> error "Tail is only supported for lists"
+--evalE g (App (Prim Head) e) = 
+--  case evalE g e of 
+--    Nil             -> error "The list is empty. Head only works on non-empty lists"
+--    Cons i _        -> I i
+--    F funEnv f [] e -> 
+--      case evalE funEnv e of 
+--        Cons i _  -> I i
+--        _         -> error "Function did not return a list"
+--    _               -> error "Head is only supported for lists" 
+--evalE g (App (Prim Tail) e) = 
+--  case evalE g e of 
+--    Nil             -> error "The list is empty. Tail only works on non-empty lists"
+--    Cons _ tail     -> tail
+--    F funEnv f [] fe ->
+--      case evalE funEnv fe of 
+--        Cons _ tail -> tail
+--        _           -> error "Function did not return a list"
+--    _               -> error "Tail is only supported for lists"
 -- Null operator to check is a list is empty
 evalE g (App (Prim Null) e) = 
   case evalE g e of 
     Nil -> B True
     _   -> B False
 
--- Parital functions 
+-- Head and tail operator for list and Parital functions operators
 evalE g (App (Prim op) e) = 
   case evalE g e of 
-    Nil -> Nil
-    I n -> case op of 
+    Nil           -> 
+      case op of 
+        Head  -> error "List is empty. Operators only works on non-empty list" 
+        Tail  -> error "List is empty. Operators only works on non-empty list" 
+        _     -> Nil
+    -- Only for list operators
+    Cons h t      -> 
+      case op of 
+        Head  -> I h
+        Tail  -> t
+        x     -> error "Operator is not supported for list"
+    I n       -> case op of 
       Neg   -> I (-n)
       x     -> F g "" ["$"] (App (App (Prim x) (Var "$")) (Num n))
-    _   -> error "Operators is only supported for integers"
+    F fg n [] fe  -> 
+      case evalE fg fe of
+        Cons h t  -> 
+          case op of 
+            Head  -> I h 
+            Tail  -> t
+            x     -> error "Operator is not supported for list"
+    _   -> error "Operators is only supported for this type"
 
 -- Operators for integers
 evalE g (App (App (Prim op) e1) e2) =
